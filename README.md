@@ -80,4 +80,4 @@ Improve checkmate detection
  # license
 This project is open-source and available under the MIT License.
 
-Enjoy this project.
+Enjoy this game.
