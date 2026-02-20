@@ -1,5 +1,7 @@
+
 package chess;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -11,6 +13,7 @@ public class Main {
         while (true) {
             board.printBoard();
             System.out.println(turn + " move (e2 e4):");
+
             String fromInput = scanner.next();
             String toInput = scanner.next();
 
@@ -22,21 +25,31 @@ public class Main {
                 continue;
             }
 
-            board.move(from, to, turn);
+            if (!board.move(from, to, turn)) {
+                System.out.println("Illegal move. Try again.");
+                continue;
+            }
 
             PieceColor opponent = (turn == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
 
             if (board.isKingInCheck(opponent)) {
-                if (board.isCheckmate(opponent)) {
-                    System.out.println("CHECKMATE! " + turn + " WINS!");
-                    board.printBoard();
-                    break;
-                } else {
-                    System.out.println(opponent + " is in CHECK!");
+                List<Piece> attackers = board.getAttackingPieces(opponent);
+                System.out.print(opponent + " is in CHECK by: ");
+                for (Piece p : attackers) {
+                    System.out.print(p.getColor() + " " + p.getClass().getSimpleName() + " at " + p.getPosition() + "  ");
                 }
+                System.out.println();
+            }
+
+            if (board.isCheckmate(opponent)) {
+                System.out.println("CHECKMATE! " + turn + " WINS!");
+                board.printBoard();
+                break;
             }
 
             turn = opponent;
         }
+
+        scanner.close();
     }
 }

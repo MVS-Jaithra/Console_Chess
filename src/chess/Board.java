@@ -1,124 +1,144 @@
+
 package chess;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Board {
+    public Piece[][] board; // public for King simulation
 
-    private Piece[][] grid = new Piece[8][8];
+    public Board() {
+        board = new Piece[8][8];
+        setupPieces();
+    }
 
-    public Board() { initialize(); }
-
-    private void initialize() {
+    private void setupPieces() {
         // Pawns
         for (int i = 0; i < 8; i++) {
-            grid[6][i] = new Pawn(PieceColor.WHITE);
-            grid[1][i] = new Pawn(PieceColor.BLACK);
+            board[1][i] = new Pawn(PieceColor.WHITE, new Position(1, i));
+            board[6][i] = new Pawn(PieceColor.BLACK, new Position(6, i));
         }
 
         // Rooks
-        grid[7][0] = new Rook(PieceColor.WHITE);
-        grid[7][7] = new Rook(PieceColor.WHITE);
-        grid[0][0] = new Rook(PieceColor.BLACK);
-        grid[0][7] = new Rook(PieceColor.BLACK);
+        board[0][0] = new Rook(PieceColor.WHITE, new Position(0, 0));
+        board[0][7] = new Rook(PieceColor.WHITE, new Position(0, 7));
+        board[7][0] = new Rook(PieceColor.BLACK, new Position(7, 0));
+        board[7][7] = new Rook(PieceColor.BLACK, new Position(7, 7));
 
         // Knights
-        grid[7][1] = new Knight(PieceColor.WHITE);
-        grid[7][6] = new Knight(PieceColor.WHITE);
-        grid[0][1] = new Knight(PieceColor.BLACK);
-        grid[0][6] = new Knight(PieceColor.BLACK);
+        board[0][1] = new Knight(PieceColor.WHITE, new Position(0, 1));
+        board[0][6] = new Knight(PieceColor.WHITE, new Position(0, 6));
+        board[7][1] = new Knight(PieceColor.BLACK, new Position(7, 1));
+        board[7][6] = new Knight(PieceColor.BLACK, new Position(7, 6));
 
         // Bishops
-        grid[7][2] = new Bishop(PieceColor.WHITE);
-        grid[7][5] = new Bishop(PieceColor.WHITE);
-        grid[0][2] = new Bishop(PieceColor.BLACK);
-        grid[0][5] = new Bishop(PieceColor.BLACK);
+        board[0][2] = new Bishop(PieceColor.WHITE, new Position(0, 2));
+        board[0][5] = new Bishop(PieceColor.WHITE, new Position(0, 5));
+        board[7][2] = new Bishop(PieceColor.BLACK, new Position(7, 2));
+        board[7][5] = new Bishop(PieceColor.BLACK, new Position(7, 5));
 
         // Queens
-        grid[7][3] = new Queen(PieceColor.WHITE);
-        grid[0][3] = new Queen(PieceColor.BLACK);
+        board[0][3] = new Queen(PieceColor.WHITE, new Position(0, 3));
+        board[7][3] = new Queen(PieceColor.BLACK, new Position(7, 3));
 
         // Kings
-        grid[7][4] = new King(PieceColor.WHITE);
-        grid[0][4] = new King(PieceColor.BLACK);
+        board[0][4] = new King(PieceColor.WHITE, new Position(0, 4));
+        board[7][4] = new King(PieceColor.BLACK, new Position(7, 4));
     }
 
-    public Piece getPiece(Position pos) {
-        return grid[pos.getRow()][pos.getCol()];
+    public void printBoard() {
+        for (int row = 7; row >= 0; row--) {
+            System.out.print((row + 1) + " ");
+            for (int col = 0; col < 8; col++) {
+                if (board[row][col] == null) System.out.print(". ");
+                else System.out.print(board[row][col].getSymbol() + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("  a b c d e f g h");
     }
 
-    public void move(Position from, Position to, PieceColor turn) {
-        Piece piece = getPiece(from);
-        if (piece == null) { System.out.println("No piece there!"); return; }
-        if (piece.getColor() != turn) { System.out.println("Wrong turn!"); return; }
-        if (!piece.isValidMove(this, from, to)) { System.out.println("Invalid move!"); return; }
+    public boolean move(Position from, Position to, PieceColor turn) {
+        Piece piece = getPieceAt(from);
+        if (piece == null || piece.getColor() != turn) return false;
+        if (!piece.isValidMove(to, this)) return false;
 
-        Piece target = getPiece(to);
-        if (target != null && target.getColor() == turn) { System.out.println("Cannot capture own piece!"); return; }
+        Piece target = getPieceAt(to);
+        board[to.getRow()][to.getCol()] = piece;
+        board[from.getRow()][from.getCol()] = null;
+        piece.setPosition(to);
 
-        grid[to.getRow()][to.getCol()] = piece;
-        grid[from.getRow()][from.getCol()] = null;
-    }
-
-    public boolean isPathClear(Position from, Position to) {
-        int rowStep = Integer.compare(to.getRow(), from.getRow());
-        int colStep = Integer.compare(to.getCol(), from.getCol());
-        int r = from.getRow() + rowStep;
-        int c = from.getCol() + colStep;
-        while (r != to.getRow() || c != to.getCol()) {
-            if (grid[r][c] != null) return false;
-            r += rowStep; c += colStep;
+        // Prevent moves leaving king in check
+        if (isKingInCheck(turn)) {
+            board[from.getRow()][from.getCol()] = piece;
+            board[to.getRow()][to.getCol()] = target;
+            piece.setPosition(from);
+            return false;
         }
         return true;
     }
 
-    public Position findKing(PieceColor color) {
-        for (int r = 0; r < 8; r++)
-            for (int c = 0; c < 8; c++) {
-                Piece p = grid[r][c];
-                if (p instanceof King && p.getColor() == color) return new Position(r, c);
-            }
-        return null;
+    public Piece getPieceAt(Position pos) {
+        if (pos.getRow() < 0 || pos.getRow() >= 8 || pos.getCol() < 0 || pos.getCol() >= 8) return null;
+        return board[pos.getRow()][pos.getCol()];
     }
 
     public boolean isKingInCheck(PieceColor color) {
         Position kingPos = findKing(color);
-        PieceColor opponent = (color == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
-        for (int r = 0; r < 8; r++)
+        if (kingPos == null) return false;
+
+        for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
-                Piece p = grid[r][c];
-                if (p != null && p.getColor() == opponent) {
-                    if (p.isValidMove(this, new Position(r, c), kingPos)) {
-                        if (!(p instanceof Knight) && !isPathClear(new Position(r, c), kingPos)) continue;
-                        return true;
-                    }
+                Piece p = board[r][c];
+                if (p != null && p.getColor() != color && p.isValidMove(kingPos, this)) {
+                    return true;
                 }
             }
+        }
         return false;
+    }
+
+    public List<Piece> getAttackingPieces(PieceColor color) {
+        List<Piece> attackers = new ArrayList<>();
+        Position kingPos = findKing(color);
+        if (kingPos == null) return attackers;
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p != null && p.getColor() != color && p.isValidMove(kingPos, this)) {
+                    attackers.add(p);
+                }
+            }
+        }
+        return attackers;
     }
 
     public boolean isCheckmate(PieceColor color) {
         if (!isKingInCheck(color)) return false;
 
+        // Try all moves for this color
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
-                Piece p = grid[r][c];
+                Piece p = board[r][c];
                 if (p != null && p.getColor() == color) {
-                    Position from = new Position(r, c);
-                    for (int tr = 0; tr < 8; tr++) {
-                        for (int tc = 0; tc < 8; tc++) {
-                            Position to = new Position(tr, tc);
-                            if (!p.isValidMove(this, from, to)) continue;
-                            if (!(p instanceof Knight) && !isPathClear(from, to)) continue;
+                    List<Position> moves = p.getAllPossibleMoves(this);
+                    for (Position move : moves) {
+                        Piece captured = getPieceAt(move);
+                        Position from = p.getPosition();
 
-                            Piece captured = grid[tr][tc];
-                            grid[tr][tc] = p;
-                            grid[r][c] = null;
+                        board[move.getRow()][move.getCol()] = p;
+                        board[from.getRow()][from.getCol()] = null;
+                        p.setPosition(move);
 
-                            boolean stillInCheck = isKingInCheck(color);
+                        boolean stillInCheck = isKingInCheck(color);
 
-                            grid[r][c] = p;
-                            grid[tr][tc] = captured;
+                        // Undo move
+                        board[from.getRow()][from.getCol()] = p;
+                        board[move.getRow()][move.getCol()] = captured;
+                        p.setPosition(from);
 
-                            if (!stillInCheck) return false;
-                        }
+                        if (!stillInCheck) return false;
                     }
                 }
             }
@@ -126,15 +146,13 @@ public class Board {
         return true;
     }
 
-    public void printBoard() {
-        System.out.println("\n  a b c d e f g h");
+    private Position findKing(PieceColor color) {
         for (int r = 0; r < 8; r++) {
-            System.out.print((8 - r) + " ");
             for (int c = 0; c < 8; c++) {
-                if (grid[r][c] == null) System.out.print(". ");
-                else System.out.print(grid[r][c].getSymbol() + " ");
+                Piece p = board[r][c];
+                if (p instanceof King && p.getColor() == color) return p.getPosition();
             }
-            System.out.println();
         }
+        return null;
     }
 }

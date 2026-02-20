@@ -1,21 +1,30 @@
+
 package chess;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Queen extends Piece {
-    public Queen(PieceColor color) { super(color); }
+    public Queen(PieceColor color, Position position) { super(color, position); }
 
     @Override
-    public boolean isValidMove(Board board, Position from, Position to) {
-        if (to == null) return false;
-        int rowDiff = Math.abs(from.getRow() - to.getRow());
-        int colDiff = Math.abs(from.getCol() - to.getCol());
-        Piece target = board.getPiece(to);
-
-        boolean diagonal = rowDiff == colDiff;
-        boolean straight = from.getRow() == to.getRow() || from.getCol() == to.getCol();
-        if (!diagonal && !straight) return false;
-        return target == null || target.getColor() != getColor();
+    public boolean isValidMove(Position to, Board board) {
+        // Combine Rook + Bishop logic
+        Rook rookPart = new Rook(color, position);
+        Bishop bishopPart = new Bishop(color, position);
+        return rookPart.isValidMove(to, board) || bishopPart.isValidMove(to, board);
     }
 
     @Override
-    public char getSymbol() { return (getColor() == PieceColor.WHITE) ? 'Q' : 'q'; }
+    public List<Position> getAllPossibleMoves(Board board) {
+        List<Position> moves = new ArrayList<>();
+        for (int r = 0; r < 8; r++)
+            for (int c = 0; c < 8; c++)
+                if (isValidMove(new Position(r, c), board))
+                    moves.add(new Position(r, c));
+        return moves;
+    }
+
+    @Override
+    public char getSymbol() { return (color == PieceColor.WHITE) ? 'Q' : 'q'; }
 }
