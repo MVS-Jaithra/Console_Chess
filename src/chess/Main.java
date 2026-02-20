@@ -1,4 +1,3 @@
-
 package chess;
 
 import java.util.List;
@@ -11,7 +10,12 @@ public class Main {
         PieceColor turn = PieceColor.WHITE;
 
         while (true) {
-            board.printBoard();
+            if (board.isGameOver()) {
+                System.out.println("\nGame Over!");
+                break;
+            }
+
+            board.printBoard(); // Timer printed with board
             System.out.println(turn + " move (e2 e4):");
 
             String fromInput = scanner.next();
@@ -42,8 +46,9 @@ public class Main {
             }
 
             if (board.isCheckmate(opponent)) {
-                System.out.println("CHECKMATE! " + turn + " WINS!");
+                System.out.println("\nCHECKMATE! " + turn + " WINS!");
                 board.printBoard();
+                board.stopTimer();
                 break;
             }
 
